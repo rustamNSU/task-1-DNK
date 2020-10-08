@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include "gtest/gtest.h"
+#include <bitset>
 
 TEST(RNK, Constructors)
 {
@@ -65,6 +66,26 @@ TEST(RNK, HugeSize)
     ASSERT_EQ(card[Nucleotide::G], 1000*1024);
     ASSERT_EQ(card[Nucleotide::C], 1000*1024);
     ASSERT_EQ(card[Nucleotide::T], 1000*1024);
+}
 
+TEST(RNK, AdditionalOperators)
+{
+    RNK rnk1(10, Nucleotide::G);
+    RNK rnk2(10, Nucleotide::C);
+
+    ASSERT_TRUE(rnk1 != rnk2);
+    ASSERT_TRUE(~rnk1 == rnk2);
+    ASSERT_TRUE(rnk1.isComplementary(rnk2));
+}
+
+TEST(RNK, Split)
+{
+    RNK rnk1(10);
+    rnk1[8] = Nucleotide::G;
+    rnk1[9] = Nucleotide::G;
+
+    auto rnk2 = rnk1.split(5);
+    ASSERT_EQ(rnk1.StringRepresent(), "AAAAA");
+    ASSERT_EQ(rnk2.StringRepresent(), "AAAGG");
 }
 

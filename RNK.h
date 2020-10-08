@@ -9,6 +9,7 @@
 
 #include <exception>  // std::runtime_error
 #include <cstddef>    // size_t (but can do without it)
+#include <cassert>    // assert
 using std::size_t;
 
 enum class Nucleotide {
@@ -41,6 +42,28 @@ char NucleotideLetter(Nucleotide nucleotide)
     }
 }
 
+/* Forward declare for friend operators */
+template<class DataType = uint8_t> class RNK;
+
+template<class DataType>
+RNK<DataType> operator+(const RNK<DataType> &rnk1, const RNK<DataType> &rnk2);
+
+template<class DataType>
+std::ostream& operator<<(std::ostream &os, const RNK<DataType> &rnk);
+
+template<class DataType>
+bool operator==(const RNK<DataType> &rnk1, const RNK<DataType> &rnk2);
+
+template<class DataType>
+bool operator!=(const RNK<DataType> &rnk1, const RNK<DataType> &rnk2);
+
+
+
+
+
+
+
+
 /**********************************************************************//**
  * @class RNK
  * @param DataType is type of element that is stored in data array
@@ -48,7 +71,7 @@ char NucleotideLetter(Nucleotide nucleotide)
  * @param nElement is number of nucleotides in one DataType element
  * @param data_ is storage for DataType elements
  *************************************************************************/
-template< class DataType = uint8_t>
+template< class DataType>
 class RNK{
 private:
 
@@ -102,16 +125,15 @@ public:
 
     NucleotideReference operator[](size_t index);
 
-    template<DataType>
-    friend RNK<DataType> operator+(const RNK<DataType> &rnk1, const RNK<DataType> &rnk2);
-
-    template<DataType>
-    friend std::ostream& operator<<(std::ostream &os, const RNK<DataType> &rnk);
-
-    template<DataType>
-    friend bool operator==(const RNK<DataType> &rnk1, const RNK<DataType> &rnk2);
+    friend RNK<DataType> operator+ <> (const RNK &rnk1, const RNK &rnk2);
+    friend std::ostream& operator<< <> (std::ostream &os, const RNK &rnk);
+    friend bool          operator== <> (const RNK &rnk1, const RNK &rnk2);
+    friend bool          operator!= <> (const RNK &rnk1, const RNK &rnk2);
+    RNK<DataType>        operator~() const;
 
     std::string StringRepresent() const;
+    bool isComplementary (const RNK<DataType> &rnk) const;
+    RNK<DataType> split(size_t index);
 
     void resize(size_t new_size, Nucleotide nucleotide = Nucleotide::A);
     size_t cardinality(Nucleotide nucleotide) const;
@@ -371,3 +393,39 @@ bool operator==(const RNK<DataType> &rnk1, const RNK<DataType> &rnk2)
 
     return true;
 }
+
+template<class DataType>
+RNK<DataType> RNK<DataType>::operator~() const
+{
+    auto result = *this;
+    for (size_t i = 0; i < (size_ / nElement_) + 1; ++i){
+        result.data_[i] = ~result.data_[i];
+    }
+    return result;
+}
+
+template<class DataType>
+bool operator!=(const RNK<DataType> &rnk1, const RNK<DataType> &rnk2)
+{
+    return !(rnk1 == rnk2);
+}
+
+template<class DataType>
+bool RNK<DataType>::isComplementary(const RNK<DataType> &rnk) const
+{
+    return *this == ~rnk;
+}
+
+template<class DataType>
+RNK<DataType> RNK<DataType>::split(size_t index)
+{
+    if (index >= size_) { return RNK<DataType>(); }
+    size_t tail_size = size_ - index;
+    RNK<DataType> tail(tail_size);
+    for (size_t i = tail_size, j = 0; i < size_; ++i, ++j){
+        tail[j] = static_cast<Nucleotide>((*this)[i]);
+    }
+    this->trim(index);
+    return tail;
+}
+
