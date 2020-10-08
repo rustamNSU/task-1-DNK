@@ -5,6 +5,8 @@
 int main()
 {
     RNK rnk(100, Nucleotide::G);
+    rnk.resize(10);
+    rnk.resize(25, Nucleotide::T);
     std::cout << rnk.at(19) << rnk[20] << rnk[18] << rnk.capacity() << std::endl;
     for (int i = 0; i < rnk.size(); ++i)
     {

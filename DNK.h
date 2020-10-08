@@ -48,7 +48,6 @@ private:
     size_t size_;                            ///< number of nucleotides
 
 public:
-
     /* Constructors */
     RNK() = default;
     RNK(size_t size, Nucleotide nucleotide);
@@ -94,6 +93,7 @@ public:
 
     NucleotideReference operator[](size_t index);
 
+    void resize(size_t new_size, Nucleotide nucleotide = Nucleotide::A);
 
     /* Getters */
     size_t size() const;
@@ -197,6 +197,7 @@ RNK<DataType>::NucleotideReference::operator Nucleotide()
     return nucleotide_;
 }
 
+
 template<class DataType>
 typename RNK<DataType>::NucleotideReference& RNK<DataType>::NucleotideReference::operator=(Nucleotide nucleotide)
 {
@@ -204,12 +205,14 @@ typename RNK<DataType>::NucleotideReference& RNK<DataType>::NucleotideReference:
     return *this;
 }
 
+
 template<class DataType>
 DataType RNK<DataType>::NucleotideReference::GetMask(size_t index)
 {
     DataType result = 03;                // 00...0011
     return result << 2 * index;
 }
+
 
 template<class DataType>
 void RNK<DataType>::NucleotideReference::InsertNucleotide(Nucleotide nucleotide)
@@ -222,3 +225,41 @@ void RNK<DataType>::NucleotideReference::InsertNucleotide(Nucleotide nucleotide)
     element_ = (element_ & mask) | shiftingNucleotide;
 }
 
+
+template<class DataType>
+void RNK<DataType>::resize(size_t new_size, Nucleotide nucleotide)
+{
+    if (new_size < size_){
+        size_ = new_size;
+        return;
+    }
+    size_t new_data_size = new_size / nElement_ + 1;
+    size_t size = size_;
+
+    size_t tail_length = (size_ % nElement_) ? nElement_ - size_ % nElement_ : 0;
+    while (tail_length !=0 && size < new_size)
+    {
+        (*this)[size] = nucleotide;
+        ++size;
+        --tail_length;
+    }
+    if (size == new_size)
+    {
+        size_ = new_size;
+        return;
+    }
+
+    DataType filling_element;
+    for (int i = 0; i < nElement_; ++i){
+        InsertNucleotide(i, nucleotide, filling_element);
+    }
+
+    if (data_.size() < new_data_size)
+    {
+        data_.resize(new_data_size);
+    }
+    for (int i = size / nElement_; i < data_.size(); ++i){
+        data_[i] = filling_element;
+    }
+    size_ = new_size;
+}
