@@ -4,6 +4,8 @@
 #include <string>
 #include <sstream>
 #include <vector>
+#include <unordered_map>
+#include <functional> // std::hash<int>
 
 #include <exception>  // std::runtime_error
 #include <cstddef>    // size_t (but can do without it)
@@ -17,18 +19,25 @@ enum class Nucleotide {
     T = 3
 };
 
-std::ostream &operator<<(std::ostream &os, Nucleotide nucleotide)
+std::ostream& operator<<(std::ostream &os, Nucleotide nucleotide)
 {
     switch (nucleotide)
     {
-        case Nucleotide::A:
-            return os << "A";
-        case Nucleotide::G:
-            return os << "G";
-        case Nucleotide::C:
-            return os << "C";
-        case Nucleotide::T:
-            return os << "T";
+        case Nucleotide::A : return os << "A";
+        case Nucleotide::G : return os << "G";
+        case Nucleotide::C : return os << "C";
+        case Nucleotide::T : return os << "T";
+    }
+}
+
+char NucleotideLetter(Nucleotide nucleotide)
+{
+    switch (nucleotide)
+    {
+        case Nucleotide::A : return 'A';
+        case Nucleotide::G : return 'G';
+        case Nucleotide::C : return 'C';
+        case Nucleotide::T : return 'T';
     }
 }
 
@@ -50,7 +59,7 @@ private:
 public:
     /* Constructors */
     RNK() = default;
-    RNK(size_t size, Nucleotide nucleotide);
+    RNK(size_t size, Nucleotide nucleotide = Nucleotide::A);
 
     /* Methods */
     DataType GetMask(size_t i) const;
@@ -93,7 +102,21 @@ public:
 
     NucleotideReference operator[](size_t index);
 
+    template<DataType>
+    friend RNK<DataType> operator+(const RNK<DataType> &rnk1, const RNK<DataType> &rnk2);
+
+    template<DataType>
+    friend std::ostream& operator<<(std::ostream &os, const RNK<DataType> &rnk);
+
+    template<DataType>
+    friend bool operator==(const RNK<DataType> &rnk1, const RNK<DataType> &rnk2);
+
+    std::string StringRepresent() const;
+
     void resize(size_t new_size, Nucleotide nucleotide = Nucleotide::A);
+    size_t cardinality(Nucleotide nucleotide) const;
+    std::unordered_map< Nucleotide, int> cardinality() const;
+    void trim(size_t last_index);
 
     /* Getters */
     size_t size() const;
@@ -262,4 +285,89 @@ void RNK<DataType>::resize(size_t new_size, Nucleotide nucleotide)
         data_[i] = filling_element;
     }
     size_ = new_size;
+}
+
+template<class DataType>
+size_t RNK<DataType>::cardinality(Nucleotide nucleotide) const
+{
+    size_t result = 0;
+    for (size_t i = 0; i < size_; ++i)
+    {
+        if ((*this)[i] == nucleotide) ++result;
+    }
+    return result;
+}
+
+template<class DataType>
+std::unordered_map<Nucleotide, int> RNK<DataType>::cardinality() const
+{
+    std::unordered_map<Nucleotide, int> result =
+            {
+                    {Nucleotide::A, 0},
+                    {Nucleotide::G, 0},
+                    {Nucleotide::C, 0},
+                    {Nucleotide::T, 0}
+            };
+    for (size_t i = 0; i < size_; ++i)
+    {
+        result[(*this)[i]]++;
+    }
+    return result;
+}
+
+template<class DataType>
+void RNK<DataType>::trim(size_t last_index)
+{
+    if (last_index < size_){ size_ = last_index; }
+}
+
+template<class DataType>
+RNK<DataType> operator+(const RNK<DataType> &rnk1, const RNK<DataType> &rnk2)
+{
+    auto result = rnk1;
+    result.resize(rnk1.size() + rnk2.size());
+    for (int i = rnk1.size(), j = 0; i < result.size(); ++i, ++j)
+    {
+        result[i] = rnk2[j];
+    }
+    return result;
+}
+
+template<class DataType>
+std::ostream& operator<<(std::ostream &os, const RNK<DataType> &rnk)
+{
+    for (int i = 0; i < rnk.size(); ++i){
+        os << rnk[i];
+    }
+    os << '\n';
+    return os;
+}
+
+template<class DataType>
+std::string RNK<DataType>::StringRepresent() const
+{
+    std::string result;
+    for (int i = 0; i < size_; ++i){
+        result.push_back(NucleotideLetter((*this)[i]));
+    }
+    return result;
+}
+
+template<class DataType>
+bool operator==(const RNK<DataType> &rnk1, const RNK<DataType> &rnk2)
+{
+    if (rnk1.size() != rnk2.size()) { return false; }
+    size_t full_elements_number = rnk1.size() / rnk1.nElement_;
+    for (size_t i = 0; i < full_elements_number; ++i)
+    {
+        if (rnk1.data_[i] != rnk2.data_[i]) { return false; }
+    }
+
+    size_t tail_start = full_elements_number * rnk1.nElement_;
+    for (size_t i = tail_start; i < rnk1.size(); ++i)
+    {
+        if (rnk1[i] != rnk2[i]) { return false;}
+    }
+
+    return true;
 }
