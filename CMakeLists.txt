@@ -2,5 +2,7 @@ cmake_minimum_required(VERSION 3.17)
 project(DNK)
 
 set(CMAKE_CXX_STANDARD 20)
+file(GLOB_RECURSE HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/*.h ${CMAKE_CURRENT_SOURCE_DIR}/*.hpp)
+file(GLOB_RECURSE SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp)
 
-add_library(DNK library.cpp library.h)
+add_executable(DNK DNK.cpp)
