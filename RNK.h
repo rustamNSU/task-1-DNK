@@ -20,7 +20,7 @@ enum class Nucleotide {
     T = 3
 };
 
-std::ostream& operator<<(std::ostream &os, Nucleotide nucleotide)
+inline std::ostream& operator<<(std::ostream &os, Nucleotide nucleotide)
 {
     switch (nucleotide)
     {
@@ -29,9 +29,10 @@ std::ostream& operator<<(std::ostream &os, Nucleotide nucleotide)
         case Nucleotide::C : return os << "C";
         case Nucleotide::T : return os << "T";
     }
+    return os;
 }
 
-char NucleotideLetter(Nucleotide nucleotide)
+inline char NucleotideLetter(Nucleotide nucleotide)
 {
     switch (nucleotide)
     {
@@ -40,6 +41,7 @@ char NucleotideLetter(Nucleotide nucleotide)
         case Nucleotide::C : return 'C';
         case Nucleotide::T : return 'T';
     }
+    return 'A';
 }
 
 /* Forward declare for friend operators */
@@ -428,4 +430,118 @@ RNK<DataType> RNK<DataType>::split(size_t index)
     this->trim(index);
     return tail;
 }
+
+
+
+/* forward declare for friend function */
+template< class DataType> class DNK;
+
+template< class DataType>
+std::ostream& operator<<(std::ostream &os, const DNK<DataType> &dnk);
+
+template< class DataType>
+DNK<DataType> operator+(const DNK<DataType> &dnk1, const DNK<DataType> &dnk2);
+
+template< class DataType>
+DNK<DataType> operator==(const DNK<DataType> &dnk1, const DNK<DataType> &dnk2);
+
+template< class DataType>
+DNK<DataType> operator!=(const DNK<DataType> &dnk1, const DNK<DataType> &dnk2);
+
+
+
+template< class DataType = uint8_t >
+class DNK
+{
+private:
+    RNK<DataType> rnk_;  // first chain in DNK. Second chain is (~rnk)
+
+public:
+    DNK();
+    DNK(size_t size, Nucleotide nucleotide = Nucleotide::A);
+
+    /* Getters */
+    RNK<DataType> GetFirstChain() const;
+    RNK<DataType> GetSecondChain() const;  // ~rnk_
+    size_t size() const{ return rnk_.size(); }
+
+    friend std::ostream& operator<< <> (std::ostream &os, const DNK &dnk);
+    friend DNK<DataType> operator+  <> (const DNK &dnk1, const DNK &dnk2);
+    friend DNK<DataType> operator== <> (const DNK &dnk1, const DNK &dnk2);
+    friend DNK<DataType> operator!= <> (const DNK &dnk1, const DNK &dnk2);
+
+    typename RNK<DataType>::NucleotideReference operator[](size_t index);
+    Nucleotide operator[](size_t index) const;
+
+
+};
+
+
+template< class DataType>
+DNK<DataType>::DNK() = default;
+
+
+template< class DataType>
+DNK<DataType>::DNK(size_t size, Nucleotide nucleotide) :
+        rnk_(RNK<DataType>(size, nucleotide))
+{}
+
+
+template< class DataType>
+RNK<DataType> DNK<DataType>::GetFirstChain() const
+{
+    return rnk_;
+}
+
+
+template< class DataType>
+RNK<DataType> DNK<DataType>::GetSecondChain() const
+{
+    return ~rnk_;
+}
+
+
+template< class DataType>
+std::ostream& operator<<(std::ostream &os, const DNK<DataType> &dnk)
+{
+    os << "First chain: "  << dnk.GetFirstChain()  << "\n"
+       << "Second chain: " << dnk.GetSecondChain() << std::endl;
+    return os;
+}
+
+
+template< class DataType>
+DNK<DataType> operator+(const DNK<DataType> &dnk1, const DNK<DataType> &dnk2)
+{
+    auto result = dnk1;
+    result.rnk_ = dnk1.rnk_ + dnk2.rnk_;
+    return result;
+}
+
+
+template< class DataType>
+DNK<DataType> operator==(const DNK<DataType> &dnk1, const DNK<DataType> &dnk2)
+{
+    return dnk1.rnk_ == dnk2.rnk_;
+}
+
+
+template< class DataType>
+DNK<DataType> operator!=(const DNK<DataType> &dnk1, const DNK<DataType> &dnk2)
+{
+    return !(dnk1 == dnk2);
+}
+
+template<class DataType>
+typename RNK<DataType>::NucleotideReference DNK<DataType>::operator[](size_t index)
+{
+    return rnk_[index];
+}
+
+template<class DataType>
+Nucleotide DNK<DataType>::operator[](size_t index) const
+{
+    return rnk_[index];
+}
+
 

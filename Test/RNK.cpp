@@ -89,3 +89,12 @@ TEST(RNK, Split)
     ASSERT_EQ(rnk2.StringRepresent(), "AAAGG");
 }
 
+TEST(RNK, TemplateParametr)
+{
+    RNK<uint64_t> rnk(10, Nucleotide::G);
+    rnk.resize(40, Nucleotide::C);
+
+    ASSERT_EQ(rnk.StringRepresent(), "GGGGGGGGGGCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC");
+    ASSERT_EQ((~rnk).StringRepresent(), "CCCCCCCCCCGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG");
+}
+
